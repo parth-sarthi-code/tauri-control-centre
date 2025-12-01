@@ -1,0 +1,564 @@
+/**
+ * Control Centre Styles
+ * 
+ * macOS-inspired design with frosted glass effect, smooth animations,
+ * and modern UI patterns. Designed for Niri Wayland compositor.
+ * 
+ * Niri Compatibility:
+ * - Uses backdrop-filter for blur (compositor must support)
+ * - Transparent background for overlay appearance
+ * - Smooth transitions that work with Niri's animation system
+ */
+
+/* ============================================================================
+   CSS Variables - Design Tokens
+   ============================================================================ */
+:root {
+    /* Colors - Dark Theme (matches macOS Control Centre) */
+    --bg-primary: rgba(30, 30, 32, 0.85);
+    --bg-secondary: rgba(50, 50, 54, 0.9);
+    --bg-tile: rgba(255, 255, 255, 0.08);
+    --bg-tile-hover: rgba(255, 255, 255, 0.12);
+    --bg-tile-active: rgba(255, 255, 255, 0.06);
+    --bg-tile-enabled: rgba(59, 130, 246, 0.9);
+    --bg-tile-enabled-hover: rgba(59, 130, 246, 1);
+    
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.65);
+    --text-disabled: rgba(255, 255, 255, 0.35);
+    
+    --accent-blue: #3b82f6;
+    --accent-green: #22c55e;
+    --accent-orange: #f97316;
+    --accent-red: #ef4444;
+    
+    --slider-track: rgba(255, 255, 255, 0.15);
+    --slider-fill: #ffffff;
+    --slider-thumb: #ffffff;
+    
+    --border-color: rgba(255, 255, 255, 0.1);
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-normal: 200ms ease;
+    --transition-slow: 300ms ease;
+    
+    /* Blur */
+    --blur-amount: 30px;
+}
+
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 
+                 Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+}
+
+/* ============================================================================
+   Main Container
+   ============================================================================ */
+.control-centre {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+    backdrop-filter: blur(var(--blur-amount)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(180%);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    box-shadow: 
+        0 25px 50px -12px var(--shadow-color),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-lg);
+    gap: var(--spacing-lg);
+    
+    /* Smooth entry animation */
+    animation: slideIn 0.25s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ============================================================================
+   Header
+   ============================================================================ */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--spacing-sm);
+}
+
+.header-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.close-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: var(--bg-tile);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.close-btn:hover {
+    background: var(--bg-tile-hover);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.close-btn:active {
+    transform: scale(0.95);
+}
+
+/* ============================================================================
+   Tiles Grid
+   ============================================================================ */
+.tiles-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-lg);
+    background: var(--bg-tile);
+    border: 1px solid transparent;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    min-height: 90px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Ripple effect container */
+.tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), 
+                               rgba(255, 255, 255, 0.3) 0%, 
+                               transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.4s, transform 0.4s;
+}
+
+.tile:active::before {
+    opacity: 1;
+    transform: scale(2);
+    transition: opacity 0s, transform 0s;
+}
+
+.tile:hover {
+    background: var(--bg-tile-hover);
+    border-color: var(--border-color);
+    transform: translateY(-1px);
+}
+
+.tile:active {
+    transform: scale(0.97);
+    background: var(--bg-tile-active);
+}
+
+/* Enabled state */
+.tile[data-enabled="true"] {
+    background: var(--bg-tile-enabled);
+    border-color: var(--accent-blue);
+}
+
+.tile[data-enabled="true"]:hover {
+    background: var(--bg-tile-enabled-hover);
+}
+
+.tile[data-enabled="true"] .tile-icon {
+    color: white;
+}
+
+.tile[data-enabled="true"] .tile-label,
+.tile[data-enabled="true"] .tile-status {
+    color: white;
+}
+
+/* Tile content */
+.tile-icon {
+    color: var(--text-primary);
+    transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.tile:hover .tile-icon {
+    transform: scale(1.1);
+}
+
+.tile-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: color var(--transition-fast);
+}
+
+.tile-status {
+    font-size: 11px;
+    color: var(--text-secondary);
+    transition: color var(--transition-fast);
+}
+
+/* Action tile (Suspend) - different style */
+.tile-action {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.tile-action:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.2));
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.tile-action .tile-icon {
+    color: var(--accent-red);
+}
+
+/* ============================================================================
+   Sliders Section
+   ============================================================================ */
+.sliders-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    background: var(--bg-tile);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.slider-icon,
+.slider-icon-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+.slider-icon-btn {
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.slider-icon-btn:hover {
+    background: var(--bg-tile-hover);
+}
+
+.slider-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.slider-icon-btn.muted {
+    color: var(--accent-red);
+}
+
+.slider-container {
+    flex: 1;
+    position: relative;
+    height: 28px;
+    display: flex;
+    align-items: center;
+}
+
+/* Custom slider track */
+.slider-track {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: var(--slider-track);
+    border-radius: 3px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.slider-fill {
+    height: 100%;
+    background: var(--slider-fill);
+    border-radius: 3px;
+    transition: width 50ms linear;
+}
+
+/* Native range input styling */
+.slider {
+    position: relative;
+    width: 100%;
+    height: 28px;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.slider:focus {
+    outline: none;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    border-radius: 3px;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--slider-thumb);
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -7px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.slider::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+}
+
+/* Firefox */
+.slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    border-radius: 3px;
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--slider-thumb);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+}
+
+.slider-value {
+    width: 42px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   Footer
+   ============================================================================ */
+.footer {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--spacing-sm);
+}
+
+.footer-text {
+    font-size: 11px;
+    color: var(--text-disabled);
+}
+
+/* ============================================================================
+   Loading Overlay
+   ============================================================================ */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-primary);
+    backdrop-filter: blur(var(--blur-amount));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity var(--transition-slow);
+    border-radius: var(--radius-xl);
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================================
+   Toast Notification
+   ============================================================================ */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    opacity: 0;
+    transition: all var(--transition-normal);
+    z-index: 1001;
+    pointer-events: none;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.toast.error {
+    background: rgba(239, 68, 68, 0.9);
+}
+
+.toast.success {
+    background: rgba(34, 197, 94, 0.9);
+}
+
+/* ============================================================================
+   Accessibility
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus styles for keyboard navigation */
+.tile:focus-visible,
+.slider:focus-visible,
+.close-btn:focus-visible,
+.slider-icon-btn:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+/* ============================================================================
+   Disabled States
+   ============================================================================ */
+.tile:disabled,
+.slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ============================================================================
+   Niri-specific Adjustments
+   ============================================================================ */
+/* 
+   These styles help ensure compatibility with Niri Wayland compositor:
+   - Avoid transforms that might interfere with layer positioning
+   - Use GPU-accelerated properties for smooth performance
+   - Maintain consistent sizing for window rules
+*/
+@supports (backdrop-filter: blur(30px)) {
+    .control-centre {
+        /* Ensure blur is applied properly on Wayland */
+        will-change: backdrop-filter;
+    }
+}
+
+/* Fallback for compositors without backdrop-filter support */
+@supports not (backdrop-filter: blur(30px)) {
+    .control-centre {
+        background: rgba(30, 30, 32, 0.98);
+    }
+}

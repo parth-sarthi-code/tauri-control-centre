@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+#
+# Control Centre Toggle Script
+# 
+# This script manages the Control Centre application for Waybar integration.
+# Designed for use with Niri Wayland compositor.
+#
+# Usage:
+#   control-centre         # Toggle visibility
+#   control-centre show    # Show window
+#   control-centre hide    # Hide window
+#   control-centre kill    # Kill the application
+#
+# Waybar Integration:
+#   Add to your waybar config:
+#   "custom/control-centre": {
+#       "format": "󰍜",
+#       "on-click": "~/.local/bin/control-centre",
+#       "tooltip": "Control Centre"
+#   }
+#
+# Niri Compatibility Notes:
+# - Uses Unix sockets for IPC between instances
+# - Single instance ensured via PID file and process check
+# - Window positioning handled by Niri window rules
+#
+
+set -euo pipefail
+
+# Configuration
+APP_NAME="control-centre"
+APP_BINARY="${HOME}/.local/bin/${APP_NAME}"
+PID_FILE="${XDG_RUNTIME_DIR:-/tmp}/${APP_NAME}.pid"
+SOCKET_PATH="/tmp/control-centre.sock"
+LOG_FILE="${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME}.log"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+log() {
+    echo -e "${GREEN}[${APP_NAME}]${NC} $1"
+}
+
+warn() {
+    echo -e "${YELLOW}[${APP_NAME}]${NC} $1" >&2
+}
+
+error() {
+    echo -e "${RED}[${APP_NAME}]${NC} $1" >&2
+}
+
+# Check if the application is running
+is_running() {
+    if [[ -f "${PID_FILE}" ]]; then
+        local pid
+        pid=$(cat "${PID_FILE}")
+        if kill -0 "${pid}" 2>/dev/null; then
+            return 0
+        else
+            # Stale PID file, remove it
+            rm -f "${PID_FILE}"
+        fi
+    fi
+    
+    # Also check by process name
+    if pgrep -x "${APP_NAME}" >/dev/null 2>&1; then
+        return 0
+    fi
+    
+    return 1
+}
+
+# Get the PID of the running instance
+get_pid() {
+    if [[ -f "${PID_FILE}" ]]; then
+        cat "${PID_FILE}"
+    else
+        pgrep -x "${APP_NAME}" 2>/dev/null | head -1 || echo ""
+    fi
+}
+
+# Send toggle signal via Unix socket
+send_toggle() {
+    if [[ -S "${SOCKET_PATH}" ]]; then
+        echo "toggle" | nc -U "${SOCKET_PATH}" 2>/dev/null || true
+        return 0
+    fi
+    return 1
+}
+
+# Start the application
+start_app() {
+    if ! [[ -x "${APP_BINARY}" ]]; then
+        error "Binary not found at ${APP_BINARY}"
+        error "Please build and install the Control Centre first."
+        exit 1
+    fi
+    
+    log "Starting Control Centre..."
+    
+    # Start in background, redirect output to log file
+    nohup "${APP_BINARY}" >> "${LOG_FILE}" 2>&1 &
+    local pid=$!
+    
+    # Save PID
+    echo "${pid}" > "${PID_FILE}"
+    
+    # Wait a moment for the app to start
+    sleep 0.3
+    
+    if kill -0 "${pid}" 2>/dev/null; then
+        log "Started with PID ${pid}"
+    else
+        error "Failed to start application"
+        rm -f "${PID_FILE}"
+        exit 1
+    fi
+}
+
+# Kill the application
+kill_app() {
+    local pid
+    pid=$(get_pid)
+    
+    if [[ -n "${pid}" ]]; then
+        log "Killing Control Centre (PID: ${pid})..."
+        kill "${pid}" 2>/dev/null || true
+        
+        # Wait for graceful shutdown
+        for i in {1..10}; do
+            if ! kill -0 "${pid}" 2>/dev/null; then
+                break
+            fi
+            sleep 0.1
+        done
+        
+        # Force kill if still running
+        if kill -0 "${pid}" 2>/dev/null; then
+            kill -9 "${pid}" 2>/dev/null || true
+        fi
+    fi
+    
+    # Clean up
+    rm -f "${PID_FILE}"
+    rm -f "${SOCKET_PATH}"
+    
+    log "Control Centre stopped"
+}
+
+# Toggle visibility
+toggle() {
+    if is_running; then
+        log "Sending toggle signal..."
+        if ! send_toggle; then
+            warn "Socket not available, restarting application..."
+            kill_app
+            start_app
+        fi
+    else
+        start_app
+    fi
+}
+
+# Show the window
+show() {
+    if is_running; then
+        log "Showing window..."
+        "${APP_BINARY}" --show 2>/dev/null || send_toggle
+    else
+        start_app
+    fi
+}
+
+# Hide the window
+hide() {
+    if is_running; then
+        log "Hiding window..."
+        "${APP_BINARY}" --hide 2>/dev/null || true
+    fi
+}
+
+# Main entry point
+main() {
+    local command="${1:-toggle}"
+    
+    case "${command}" in
+        toggle|"")
+            toggle
+            ;;
+        show)
+            show
+            ;;
+        hide)
+            hide
+            ;;
+        kill|stop)
+            kill_app
+            ;;
+        restart)
+            kill_app
+            sleep 0.5
+            start_app
+            ;;
+        status)
+            if is_running; then
+                log "Running (PID: $(get_pid))"
+            else
+                log "Not running"
+            fi
+            ;;
+        *)
+            echo "Usage: ${0} [toggle|show|hide|kill|restart|status]"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

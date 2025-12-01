@@ -1,0 +1,9 @@
+{
+  "custom/control-centre": {
+    "format": "󰍜",
+    "on-click": "~/.local/bin/control-centre",
+    "on-click-right": "~/.local/bin/control-centre kill",
+    "tooltip": true,
+    "tooltip-format": "Control Centre"
+  }
+}

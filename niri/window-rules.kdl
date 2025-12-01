@@ -1,0 +1,74 @@
+// Niri Window Rules for Control Centre
+//
+// Add these rules to your niri.kdl configuration file
+// (usually at ~/.config/niri/config.kdl)
+//
+// These rules ensure the Control Centre behaves correctly as an overlay:
+// - Floating window (not tiled)
+// - Positioned in the top-right corner
+// - Always on top of other windows
+// - Proper sizing and opacity
+
+// ============================================================================
+// Control Centre Window Rules
+// ============================================================================
+
+window-rule {
+    // Match by app-id (set in Tauri config)
+    match app-id="control-centre"
+    match app-id="Control Centre"
+    
+    // Open as floating window (not tiled)
+    open-floating true
+    
+    // Default size (matches tauri.conf.json)
+    default-column-width { fixed 420; }
+    
+    // Opacity (1.0 = fully opaque, let CSS handle transparency)
+    opacity 1.0
+    
+    // Focus behavior - don't steal focus aggressively
+    // The window will still receive focus when clicked
+    
+    // Optional: Position hint (Niri may override based on available space)
+    // Position is relative to the output (monitor)
+    // For top-right corner positioning, you may need to calculate based on output size
+}
+
+// ============================================================================
+// Alternative: Layer-shell style behavior
+// ============================================================================
+// Note: Niri's layer-shell support is limited compared to other compositors.
+// The above floating window approach works best for Control Centre.
+//
+// If you need true overlay behavior, consider:
+// 1. Using a layer-shell aware toolkit (gtk-layer-shell)
+// 2. Modifying the Tauri app to use layer-shell protocols directly
+// 3. Using Niri's built-in panel features for simple indicators
+
+// ============================================================================
+// Input Rules (Optional)
+// ============================================================================
+// If you want the Control Centre to close when clicking outside,
+// this is handled by the application's focus loss detection.
+// No additional Niri configuration is needed.
+
+// ============================================================================
+// Blur Rules (Optional)
+// ============================================================================
+// Niri supports window blur through its compositor settings.
+// Enable blur for the Control Centre in your general blur settings:
+//
+// blur {
+//     // Enable blur (requires compositor support)
+//     // This affects all windows with transparency
+// }
+
+// ============================================================================
+// Key Bindings (Optional)
+// ============================================================================
+// Add a keybinding to toggle the Control Centre:
+//
+// binds {
+//     Mod+C { spawn "~/.local/bin/control-centre"; }
+// }

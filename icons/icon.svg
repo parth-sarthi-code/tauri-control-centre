@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#gradient)" />
+  
+  <!-- Control sliders icon -->
+  <g stroke="white" stroke-width="4" stroke-linecap="round">
+    <!-- Left slider -->
+    <line x1="35" y1="40" x2="35" y2="88" />
+    <circle cx="35" cy="55" r="8" fill="white" />
+    
+    <!-- Center slider -->
+    <line x1="64" y1="40" x2="64" y2="88" />
+    <circle cx="64" cy="73" r="8" fill="white" />
+    
+    <!-- Right slider -->
+    <line x1="93" y1="40" x2="93" y2="88" />
+    <circle cx="93" cy="50" r="8" fill="white" />
+  </g>
+  
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+  </defs>
+</svg>
